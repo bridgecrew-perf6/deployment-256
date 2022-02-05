@@ -1,0 +1,116 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "web-s3.fullname" . }}
+  labels:
+    {{- include "web-s3.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "web-s3.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "web-s3.selectorLabels" . | nindent 8 }}
+    spec:
+      volumes:
+      - name: dockersock
+        hostPath:
+          path: /var/run/docker.sock
+      - name: workdir
+        hostPath:
+          path: /usr/app/
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "web-s3.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: ghcr.io/web-project-s3/backend:4f94d1a98bd4ddf6368928fad74a802285ab4df6
+          env:
+          - name: REDIS_HOSTNAME
+            value: {{ .Values.REDIS_HOSTNAME}}
+          - name: DB_DIALECT
+            value: {{ .Values.DB_DIALECT }}
+          - name: DB_PORT
+            value: {{ .Values.DB_PORT | quote }}
+          - name: DB_HOST
+            value: {{ .Values.DB_HOST }}
+          - name: REDIS_PORT
+            value: {{ .Values.REDIS_PORT | quote }}
+          - name: "DB_USER"
+            valueFrom:
+              secretKeyRef:
+                key: DB_USER
+                name: {{ .Release.Name }}-auth
+          - name: "DB_PASSWORD"
+            valueFrom:
+              secretKeyRef:
+                key:  DB_PASSWORD
+                name: {{ .Release.Name }}-auth
+          - name: "DB_NAME"
+            valueFrom:
+              secretKeyRef:
+                key:  DB_NAME
+                name: {{ .Release.Name }}-auth
+          - name: "REFRESH_TOKEN"
+            valueFrom:
+              secretKeyRef:
+                key:  REFRESH_TOKEN
+                name: {{ .Release.Name }}-auth
+          - name: "ACCESS_TOKEN"
+            valueFrom:
+              secretKeyRef:
+                key:  ACCESS_TOKEN
+                name: {{ .Release.Name }}-auth
+          - name: "REDIS_PASSWORD"
+            valueFrom:
+              secretKeyRef:
+                key:  REDIS_PASSWORD
+                name: {{ .Release.Name }}-auth
+          - name: "ADMIN_EMAIL"
+            valueFrom:
+              secretKeyRef:
+                key:  ADMIN_EMAIL
+                name: {{ .Release.Name }}-auth
+          - name: "ADMIN_PASSWORD"
+            valueFrom:
+              secretKeyRef:
+                key:  ADMIN_PASSWORD
+                name: {{ .Release.Name }}-auth
+          ports:
+            - name: http
+              containerPort: 8080 
+              protocol: TCP
+          # livenessProbe:
+          #   httpGet:
+          #     path: /liveness
+          #     port: http
+          # readinessProbe:
+          #   httpGet:
+          #     path: /readiness
+          #     port: http
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
