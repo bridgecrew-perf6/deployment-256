@@ -36,7 +36,7 @@ spec:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
         - name: {{ .Chart.Name }}
-          image: ghcr.io/web-project-s3/backend:4f94d1a98bd4ddf6368928fad74a802285ab4df6
+          image: ghcr.io/web-project-s3/backend:07f627c06eb9de970618122e70b776b3edbaa0d3
           env:
           - name: REDIS_HOSTNAME
             value: {{ .Values.REDIS_HOSTNAME}}

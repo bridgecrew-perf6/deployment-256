@@ -36,7 +36,7 @@ spec:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
         - name: {{ .Chart.Name }}
-          image: ghcr.io/web-project-s3/frontend:fd193b812e76d8468061200bf36467545c5de14d
+          image: ghcr.io/web-project-s3/frontend:f5c07dc551f6a83e57e16291af1d1b1434e284aa
           ports:
             - name: http
               containerPort: 8080 
